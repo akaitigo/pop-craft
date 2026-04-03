@@ -2,6 +2,7 @@ package handler
 
 import (
 	"encoding/json"
+	"log"
 	"net/http"
 )
 
@@ -12,6 +13,6 @@ type healthResponse struct {
 func Health(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	if err := json.NewEncoder(w).Encode(healthResponse{Status: "ok"}); err != nil {
-		http.Error(w, "encode error", http.StatusInternalServerError)
+		log.Printf("failed to encode health response: %v", err)
 	}
 }

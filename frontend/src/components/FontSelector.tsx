@@ -30,10 +30,11 @@ export function FontSelector({ selected, onSelect }: FontSelectorProps) {
             <span
               style={{ fontFamily: FONT_DEFINITIONS[font].cssFontFamily }}
               className="block text-base"
+              aria-hidden="true"
             >
-              {FONT_LABELS[font]}
+              あア亜
             </span>
-            <span className="text-xs text-gray-400">{FONT_LABELS[font]}</span>
+            <span className="text-xs text-gray-500">{FONT_LABELS[font]}</span>
           </button>
         ))}
       </div>

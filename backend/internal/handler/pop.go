@@ -35,7 +35,9 @@ func PreviewPOP(w http.ResponseWriter, r *http.Request) {
 	preview := model.POPPreview{
 		ProductName: req.ProductName,
 		Price:       req.Price,
+		PriceType:   req.EffectivePriceType(),
 		Catchphrase: req.Catchphrase,
+		Description: req.Description,
 		TemplateID:  req.TemplateID,
 		FontFamily:  req.FontFamily,
 		ColorScheme: req.ColorScheme,
