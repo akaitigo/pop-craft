@@ -13,6 +13,12 @@ export default function RootLayout({
 }) {
   return (
     <html lang="ja">
+      <head>
+        <link
+          href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@700&family=Noto+Serif+JP:wght@700&family=Yomogi&family=Shippori+Mincho+B1:wght@800&display=swap"
+          rel="stylesheet"
+        />
+      </head>
       <body className="min-h-screen bg-gray-50">{children}</body>
     </html>
   );
