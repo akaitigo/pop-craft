@@ -33,13 +33,20 @@ export default function Home() {
   } = usePopState();
 
   const [templates, setTemplates] = useState<Template[]>([]);
+  const [templateError, setTemplateError] = useState<string | null>(null);
   const [showPrintPreview, setShowPrintPreview] = useState(false);
 
   useEffect(() => {
     if (!state.category) return;
+    setTemplateError(null);
     getTemplatesByCategory(state.category)
       .then(setTemplates)
-      .catch(() => setTemplates([]));
+      .catch((err: unknown) => {
+        setTemplates([]);
+        setTemplateError(
+          err instanceof Error ? err.message : "テンプレートの取得に失敗しました"
+        );
+      });
   }, [state.category]);
 
   const popRequest = toPOPRequest();
@@ -80,11 +87,25 @@ export default function Home() {
             {state.category && (
               <section>
                 <h2 className="text-lg font-semibold mb-3">テンプレートを選択</h2>
-                <TemplateGrid
-                  templates={templates}
-                  selectedId={state.template?.id ?? null}
-                  onSelect={setTemplate}
-                />
+                {templateError ? (
+                  <div className="bg-red-50 border border-red-200 rounded-lg p-4 text-red-700">
+                    <p className="font-medium">テンプレートの取得に失敗しました</p>
+                    <p className="text-sm mt-1">{templateError}</p>
+                    <button
+                      type="button"
+                      onClick={() => setCategory(state.category!)}
+                      className="mt-2 text-sm underline hover:no-underline"
+                    >
+                      再試行
+                    </button>
+                  </div>
+                ) : (
+                  <TemplateGrid
+                    templates={templates}
+                    selectedId={state.template?.id ?? null}
+                    onSelect={setTemplate}
+                  />
+                )}
               </section>
             )}
 

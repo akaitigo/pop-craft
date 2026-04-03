@@ -1,24 +1,42 @@
+import { z } from "zod";
 import type { Template, POPRequest } from "@/types/pop";
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8080";
 
-async function fetchJSON<T>(path: string, init?: RequestInit): Promise<T> {
+const templateSchema = z.object({
+  id: z.string(),
+  name: z.string(),
+  category: z.string(),
+  pattern: z.string(),
+  description: z.string(),
+  primary_color: z.string(),
+  accent_color: z.string(),
+});
+
+const templateArraySchema = z.array(templateSchema);
+
+async function fetchJSON<T>(
+  path: string,
+  schema: z.ZodType<T>,
+  init?: RequestInit
+): Promise<T> {
   const res = await fetch(`${API_BASE}${path}`, init);
   if (!res.ok) {
     const text = await res.text();
     throw new Error(`API error ${res.status}: ${text}`);
   }
-  return res.json() as Promise<T>;
+  const data: unknown = await res.json();
+  return schema.parse(data);
 }
 
 export async function listTemplates(): Promise<Template[]> {
-  return fetchJSON<Template[]>("/api/v1/templates");
+  return fetchJSON("/api/v1/templates", templateArraySchema);
 }
 
 export async function getTemplatesByCategory(
   category: string
 ): Promise<Template[]> {
-  return fetchJSON<Template[]>(`/api/v1/templates/${category}`);
+  return fetchJSON(`/api/v1/templates/${encodeURIComponent(category)}`, templateArraySchema);
 }
 
 export async function generatePDF(req: POPRequest): Promise<Blob> {
@@ -35,9 +53,17 @@ export async function generatePDF(req: POPRequest): Promise<Blob> {
 }
 
 export async function previewPOP(req: POPRequest): Promise<POPRequest> {
-  return fetchJSON<POPRequest>("/api/v1/pop/preview", {
+  return fetchJSON("/api/v1/pop/preview", z.object({
+    product_name: z.string(),
+    price: z.number(),
+    catchphrase: z.string(),
+    template_id: z.string(),
+    font_family: z.string(),
+    color_scheme: z.string(),
+    paper_size: z.string(),
+  }), {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(req),
-  });
+  }) as Promise<POPRequest>;
 }

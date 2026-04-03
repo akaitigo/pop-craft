@@ -17,7 +17,9 @@ func TestPOPRequest_Validate(t *testing.T) {
 			req: model.POPRequest{
 				ProductName: "りんご",
 				Price:       198,
+				PriceType:   model.PriceTaxIncluded,
 				TemplateID:  "super-recommend",
+				FontFamily:  model.FontGothic,
 				PaperSize:   model.PaperA4,
 			},
 			wantErr: false,
@@ -33,10 +35,30 @@ func TestPOPRequest_Validate(t *testing.T) {
 			wantErr: true,
 		},
 		{
+			name: "product name too long",
+			req: model.POPRequest{
+				ProductName: "あいうえおかきくけこさしすせそたちつてとなにぬねのはひふへほまみむめもやゆよらりるれろわをんアイウエオ12345",
+				Price:       198,
+				TemplateID:  "super-recommend",
+				PaperSize:   model.PaperA4,
+			},
+			wantErr: true,
+		},
+		{
 			name: "negative price",
 			req: model.POPRequest{
 				ProductName: "りんご",
 				Price:       -1,
+				TemplateID:  "super-recommend",
+				PaperSize:   model.PaperA4,
+			},
+			wantErr: true,
+		},
+		{
+			name: "price too high",
+			req: model.POPRequest{
+				ProductName: "りんご",
+				Price:       10000000,
 				TemplateID:  "super-recommend",
 				PaperSize:   model.PaperA4,
 			},
@@ -63,7 +85,29 @@ func TestPOPRequest_Validate(t *testing.T) {
 			wantErr: true,
 		},
 		{
-			name: "A5 paper size",
+			name: "invalid price type",
+			req: model.POPRequest{
+				ProductName: "りんご",
+				Price:       198,
+				TemplateID:  "super-recommend",
+				PaperSize:   model.PaperA4,
+				PriceType:   "invalid",
+			},
+			wantErr: true,
+		},
+		{
+			name: "invalid font family",
+			req: model.POPRequest{
+				ProductName: "りんご",
+				Price:       198,
+				TemplateID:  "super-recommend",
+				PaperSize:   model.PaperA4,
+				FontFamily:  "comic_sans",
+			},
+			wantErr: true,
+		},
+		{
+			name: "A5 paper size valid",
 			req: model.POPRequest{
 				ProductName: "りんご",
 				Price:       198,
@@ -73,12 +117,34 @@ func TestPOPRequest_Validate(t *testing.T) {
 			wantErr: false,
 		},
 		{
-			name: "card paper size",
+			name: "card paper size valid",
 			req: model.POPRequest{
 				ProductName: "りんご",
 				Price:       198,
 				TemplateID:  "super-recommend",
 				PaperSize:   model.PaperCard,
+			},
+			wantErr: false,
+		},
+		{
+			name: "empty price type defaults ok",
+			req: model.POPRequest{
+				ProductName: "りんご",
+				Price:       198,
+				TemplateID:  "super-recommend",
+				PaperSize:   model.PaperA4,
+				PriceType:   "",
+			},
+			wantErr: false,
+		},
+		{
+			name: "empty font family defaults ok",
+			req: model.POPRequest{
+				ProductName: "りんご",
+				Price:       198,
+				TemplateID:  "super-recommend",
+				PaperSize:   model.PaperA4,
+				FontFamily:  "",
 			},
 			wantErr: false,
 		},
@@ -94,11 +160,23 @@ func TestPOPRequest_Validate(t *testing.T) {
 	}
 }
 
+func TestPOPRequest_EffectivePriceType(t *testing.T) {
+	req := model.POPRequest{PriceType: ""}
+	if req.EffectivePriceType() != model.PriceTaxIncluded {
+		t.Error("expected default to be tax_included")
+	}
+
+	req.PriceType = model.PriceTaxExcluded
+	if req.EffectivePriceType() != model.PriceTaxExcluded {
+		t.Error("expected tax_excluded")
+	}
+}
+
 func TestPaperDimensions(t *testing.T) {
 	tests := []struct {
-		size   model.PaperSize
-		wantW  float64
-		wantH  float64
+		size  model.PaperSize
+		wantW float64
+		wantH float64
 	}{
 		{model.PaperA4, 210, 297},
 		{model.PaperA5, 148, 210},

@@ -85,6 +85,7 @@ export function drawTemplateName(
   const font = FONT_DEFINITIONS[options.fontFamily];
   const fontSize = scale(14, width);
   ctx.font = `${font.weight} ${fontSize}px ${font.cssFontFamily}`;
+  // Use primary color on accent bar for contrast (accent bar is drawn behind)
   ctx.fillStyle = options.primaryColor;
   ctx.textAlign = "center";
   ctx.textBaseline = "middle";
@@ -160,7 +161,46 @@ export function drawDescription(
   ctx.fillStyle = "#FFFFFF";
   ctx.textAlign = "center";
   ctx.textBaseline = "middle";
-  ctx.fillText(options.description, width / 2, height * 0.82, width * 0.85);
+
+  const maxWidth = width * 0.85;
+  const lineHeight = fontSize * 1.4;
+  const lines = wrapText(ctx, options.description, maxWidth);
+  const startY = height * 0.82 - ((lines.length - 1) * lineHeight) / 2;
+
+  for (let i = 0; i < lines.length; i++) {
+    ctx.fillText(lines[i], width / 2, startY + i * lineHeight);
+  }
+}
+
+function wrapText(
+  ctx: CanvasRenderingContext2D,
+  text: string,
+  maxWidth: number
+): string[] {
+  const lines: string[] = [];
+  let currentLine = "";
+
+  for (const char of text) {
+    const testLine = currentLine + char;
+    const metrics = ctx.measureText(testLine);
+    if (metrics.width > maxWidth && currentLine.length > 0) {
+      lines.push(currentLine);
+      currentLine = char;
+    } else {
+      currentLine = testLine;
+    }
+  }
+  if (currentLine) {
+    lines.push(currentLine);
+  }
+
+  // Limit to 3 lines max to prevent overflow
+  if (lines.length > 3) {
+    const truncated = lines.slice(0, 3);
+    truncated[2] = truncated[2].slice(0, -1) + "…";
+    return truncated;
+  }
+  return lines;
 }
 
 function scale(base: number, canvasWidth: number): number {

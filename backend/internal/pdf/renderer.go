@@ -23,82 +23,86 @@ type Renderer struct {
 
 // Render writes the PDF to the given writer.
 func (r *Renderer) Render(w io.Writer) error {
+	// Use local vars to avoid mutating struct fields
+	width, height := r.Width, r.Height
 	orientation := "P"
-	if r.Width > r.Height {
+	if width > height {
 		orientation = "L"
-		r.Width, r.Height = r.Height, r.Width
+		width, height = height, width
 	}
 
 	pdf := fpdf.NewCustom(&fpdf.InitType{
 		OrientationStr: orientation,
 		UnitStr:        "mm",
 		SizeStr:        "",
-		Size:           fpdf.SizeType{Wd: r.Width, Ht: r.Height},
+		Size:           fpdf.SizeType{Wd: width, Ht: height},
 	})
 
 	pdf.SetAutoPageBreak(false, 0)
 	pdf.AddPage()
 
+	fontSize := func(base float64) float64 {
+		return base * (width / 210.0)
+	}
+
 	// Background color from template
 	bgR, bgG, bgB := hexToRGB(r.Template.PrimaryColor)
 	pdf.SetFillColor(bgR, bgG, bgB)
-	pdf.Rect(0, 0, r.Width, r.Height, "F")
+	pdf.Rect(0, 0, width, height, "F")
 
-	// Use built-in font (Japanese font would require embedding)
-	pdf.SetFont("Helvetica", "B", r.fontSize(24))
+	pdf.SetFont("Helvetica", "B", fontSize(24))
 
 	// Accent bar at top
 	acR, acG, acB := hexToRGB(r.Template.AccentColor)
 	pdf.SetFillColor(acR, acG, acB)
-	barHeight := r.Height * 0.15
-	pdf.Rect(0, 0, r.Width, barHeight, "F")
+	barHeight := height * 0.15
+	pdf.Rect(0, 0, width, barHeight, "F")
 
-	// Template name (pattern label)
+	// Template name on accent bar — use contrasting color
 	pdf.SetTextColor(bgR, bgG, bgB)
-	pdf.SetFont("Helvetica", "B", r.fontSize(14))
+	pdf.SetFont("Helvetica", "B", fontSize(14))
 	pdf.SetXY(0, barHeight*0.2)
-	pdf.CellFormat(r.Width, barHeight*0.6, r.Template.Name, "", 0, "C", false, 0, "")
+	pdf.CellFormat(width, barHeight*0.6, r.Template.Name, "", 0, "C", false, 0, "")
 
 	// Catchphrase
 	if r.Catchphrase != "" {
 		pdf.SetTextColor(255, 255, 255)
-		pdf.SetFont("Helvetica", "I", r.fontSize(12))
-		pdf.SetXY(0, barHeight+r.Height*0.05)
-		pdf.CellFormat(r.Width, r.fontSize(12)*0.5, r.Catchphrase, "", 0, "C", false, 0, "")
+		pdf.SetFont("Helvetica", "I", fontSize(12))
+		pdf.SetXY(0, barHeight+height*0.05)
+		pdf.CellFormat(width, fontSize(12)*0.5, r.Catchphrase, "", 0, "C", false, 0, "")
 	}
 
 	// Product name
 	pdf.SetTextColor(255, 255, 255)
-	pdf.SetFont("Helvetica", "B", r.fontSize(28))
-	nameY := r.Height * 0.35
+	pdf.SetFont("Helvetica", "B", fontSize(28))
+	nameY := height * 0.35
 	pdf.SetXY(0, nameY)
-	pdf.CellFormat(r.Width, r.fontSize(28)*0.5, r.ProductName, "", 0, "C", false, 0, "")
+	pdf.CellFormat(width, fontSize(28)*0.5, r.ProductName, "", 0, "C", false, 0, "")
 
-	// Price
-	pdf.SetFont("Helvetica", "B", r.fontSize(36))
+	// Price with yen sign
+	pdf.SetFont("Helvetica", "B", fontSize(36))
 	pdf.SetTextColor(acR, acG, acB)
-	priceY := r.Height * 0.55
-	priceLabel := "tax_included"
-	if r.PriceType == "tax_excluded" {
-		priceLabel = "tax_excluded"
-	}
-	_ = priceLabel
+	priceY := height * 0.55
 	priceStr := fmt.Sprintf("%d", r.Price)
 	pdf.SetXY(0, priceY)
-	pdf.CellFormat(r.Width, r.fontSize(36)*0.5, priceStr, "", 0, "C", false, 0, "")
+	pdf.CellFormat(width, fontSize(36)*0.5, priceStr, "", 0, "C", false, 0, "")
 
-	// Yen symbol
-	pdf.SetFont("Helvetica", "", r.fontSize(18))
-	pdf.SetXY(0, priceY+r.fontSize(36)*0.5)
-	pdf.CellFormat(r.Width, r.fontSize(18)*0.5, "yen", "", 0, "C", false, 0, "")
+	// Tax label
+	taxLabel := "(tax incl.)"
+	if r.PriceType == "tax_excluded" {
+		taxLabel = "(tax excl.)"
+	}
+	pdf.SetFont("Helvetica", "", fontSize(10))
+	pdf.SetXY(0, priceY+fontSize(36)*0.5)
+	pdf.CellFormat(width, fontSize(10)*0.5, taxLabel, "", 0, "C", false, 0, "")
 
 	// Description
 	if r.Description != "" {
 		pdf.SetTextColor(255, 255, 255)
-		pdf.SetFont("Helvetica", "", r.fontSize(10))
-		descY := r.Height * 0.78
-		pdf.SetXY(r.Width*0.1, descY)
-		pdf.MultiCell(r.Width*0.8, r.fontSize(10)*0.4, r.Description, "", "C", false)
+		pdf.SetFont("Helvetica", "", fontSize(10))
+		descY := height * 0.78
+		pdf.SetXY(width*0.1, descY)
+		pdf.MultiCell(width*0.8, fontSize(10)*0.4, r.Description, "", "C", false)
 	}
 
 	if err := pdf.Error(); err != nil {
@@ -106,11 +110,6 @@ func (r *Renderer) Render(w io.Writer) error {
 	}
 
 	return pdf.Output(w)
-}
-
-func (r *Renderer) fontSize(base float64) float64 {
-	scale := r.Width / 210.0 // A4 width as reference
-	return base * scale
 }
 
 func hexToRGB(hex string) (int, int, int) {

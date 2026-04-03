@@ -11,11 +11,11 @@ func validRequest(paperSize model.PaperSize) model.POPRequest {
 	return model.POPRequest{
 		ProductName: "Test Product",
 		Price:       1980,
-		PriceType:   "tax_included",
+		PriceType:   model.PriceTaxIncluded,
 		Catchphrase: "Great deal",
 		Description: "A test product",
 		TemplateID:  "super-recommend",
-		FontFamily:  "gothic",
+		FontFamily:  model.FontGothic,
 		ColorScheme: "red-gold",
 		PaperSize:   paperSize,
 	}

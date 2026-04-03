@@ -25,10 +25,10 @@ func Generate(req model.POPRequest) ([]byte, error) {
 		Template:    tmpl,
 		ProductName: req.ProductName,
 		Price:       req.Price,
-		PriceType:   req.PriceType,
+		PriceType:   string(req.EffectivePriceType()),
 		Catchphrase: req.Catchphrase,
 		Description: req.Description,
-		FontFamily:  req.FontFamily,
+		FontFamily:  string(req.FontFamily),
 	}
 
 	if err := renderer.Render(&buf); err != nil {
