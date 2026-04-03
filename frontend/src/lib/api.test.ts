@@ -8,16 +8,25 @@ beforeEach(() => {
   mockFetch.mockReset();
 });
 
+const validTemplate = {
+  id: "super-recommend",
+  name: "本日のおすすめ",
+  category: "supermarket",
+  pattern: "recommendation",
+  description: "テスト",
+  primary_color: "#E53935",
+  accent_color: "#FDD835",
+};
+
 describe("listTemplates", () => {
-  it("fetches all templates", async () => {
-    const templates = [{ id: "super-recommend", name: "本日のおすすめ" }];
+  it("fetches and validates templates", async () => {
     mockFetch.mockResolvedValueOnce({
       ok: true,
-      json: () => Promise.resolve(templates),
+      json: () => Promise.resolve([validTemplate]),
     });
 
     const result = await listTemplates();
-    expect(result).toEqual(templates);
+    expect(result).toEqual([validTemplate]);
     expect(mockFetch).toHaveBeenCalledWith(
       "http://localhost:8080/api/v1/templates",
       undefined
@@ -33,20 +42,41 @@ describe("listTemplates", () => {
 
     await expect(listTemplates()).rejects.toThrow("API error 500");
   });
+
+  it("throws on invalid response shape", async () => {
+    mockFetch.mockResolvedValueOnce({
+      ok: true,
+      json: () => Promise.resolve([{ invalid: "data" }]),
+    });
+
+    await expect(listTemplates()).rejects.toThrow();
+  });
 });
 
 describe("getTemplatesByCategory", () => {
   it("fetches templates by category", async () => {
-    const templates = [{ id: "drug-recommend", name: "おすすめ商品" }];
     mockFetch.mockResolvedValueOnce({
       ok: true,
-      json: () => Promise.resolve(templates),
+      json: () => Promise.resolve([validTemplate]),
     });
 
-    const result = await getTemplatesByCategory("drugstore");
-    expect(result).toEqual(templates);
+    const result = await getTemplatesByCategory("supermarket");
+    expect(result).toEqual([validTemplate]);
     expect(mockFetch).toHaveBeenCalledWith(
-      "http://localhost:8080/api/v1/templates/drugstore",
+      "http://localhost:8080/api/v1/templates/supermarket",
+      undefined
+    );
+  });
+
+  it("encodes category in URL", async () => {
+    mockFetch.mockResolvedValueOnce({
+      ok: true,
+      json: () => Promise.resolve([]),
+    });
+
+    await getTemplatesByCategory("some category");
+    expect(mockFetch).toHaveBeenCalledWith(
+      "http://localhost:8080/api/v1/templates/some%20category",
       undefined
     );
   });
