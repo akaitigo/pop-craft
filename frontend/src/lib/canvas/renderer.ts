@@ -1,5 +1,6 @@
 import type { PaperSize, FontFamily } from "@/types/pop";
 import { FONT_DEFINITIONS } from "./fonts";
+import { hexToRgb } from "./colors";
 
 export interface RenderOptions {
   productName: string;
@@ -85,8 +86,7 @@ export function drawTemplateName(
   const font = FONT_DEFINITIONS[options.fontFamily];
   const fontSize = scale(14, width);
   ctx.font = `${font.weight} ${fontSize}px ${font.cssFontFamily}`;
-  // Use primary color on accent bar for contrast (accent bar is drawn behind)
-  ctx.fillStyle = options.primaryColor;
+  ctx.fillStyle = contrastColor(options.accentColor);
   ctx.textAlign = "center";
   ctx.textBaseline = "middle";
   ctx.fillText(options.templateName, width / 2, height * 0.075);
@@ -197,10 +197,33 @@ function wrapText(
   // Limit to 3 lines max to prevent overflow
   if (lines.length > 3) {
     const truncated = lines.slice(0, 3);
-    truncated[2] = truncated[2].slice(0, -1) + "…";
+    truncated[2] = truncateToFit(ctx, truncated[2], maxWidth);
     return truncated;
   }
   return lines;
+}
+
+function truncateToFit(
+  ctx: CanvasRenderingContext2D,
+  text: string,
+  maxWidth: number
+): string {
+  const ellipsis = "…";
+  if (ctx.measureText(text + ellipsis).width <= maxWidth) {
+    return text + ellipsis;
+  }
+  let truncated = text;
+  while (truncated.length > 0 && ctx.measureText(truncated + ellipsis).width > maxWidth) {
+    truncated = truncated.slice(0, -1);
+  }
+  return truncated + ellipsis;
+}
+
+function contrastColor(hex: string): string {
+  const rgb = hexToRgb(hex);
+  if (!rgb) return "#000000";
+  const luminance = (0.299 * rgb.r + 0.587 * rgb.g + 0.114 * rgb.b) / 255;
+  return luminance > 0.5 ? "#000000" : "#FFFFFF";
 }
 
 function scale(base: number, canvasWidth: number): number {

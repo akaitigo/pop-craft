@@ -35,15 +35,6 @@ export interface POPRequest {
   paper_size: PaperSize;
 }
 
-export interface POPPreview {
-  product_name: string;
-  price: number;
-  catchphrase: string;
-  template_id: string;
-  font_family: string;
-  color_scheme: string;
-  paper_size: PaperSize;
-}
 
 export const CATEGORY_LABELS: Record<Category, string> = {
   supermarket: "スーパー",

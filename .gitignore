@@ -4,6 +4,7 @@ frontend/node_modules/
 # Build
 frontend/.next/
 backend/bin/
+backend/server
 
 # Environment
 .env

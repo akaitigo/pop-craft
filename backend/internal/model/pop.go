@@ -106,7 +106,9 @@ func (r POPRequest) EffectivePriceType() PriceType {
 type POPPreview struct {
 	ProductName string     `json:"product_name"`
 	Price       int        `json:"price"`
+	PriceType   PriceType  `json:"price_type"`
 	Catchphrase string     `json:"catchphrase"`
+	Description string     `json:"description"`
 	TemplateID  string     `json:"template_id"`
 	FontFamily  FontFamily `json:"font_family"`
 	ColorScheme string     `json:"color_scheme"`
