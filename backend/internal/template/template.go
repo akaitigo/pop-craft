@@ -55,6 +55,23 @@ func All() []Template {
 	return templates
 }
 
+// Categories returns all valid template categories in display order.
+func Categories() []Category {
+	return []Category{Supermarket, Drugstore, Bookstore}
+}
+
+// IsValidCategory reports whether category is one of the known template
+// categories. It is used to reject unknown category path parameters
+// explicitly rather than relying on an empty result set.
+func IsValidCategory(category string) bool {
+	for _, c := range Categories() {
+		if Category(category) == c {
+			return true
+		}
+	}
+	return false
+}
+
 func ByCategory(category string) []Template {
 	var result []Template
 	cat := Category(category)
