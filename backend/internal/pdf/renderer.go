@@ -3,6 +3,7 @@ package pdf
 import (
 	"fmt"
 	"io"
+	"log"
 
 	"github.com/akaitigo/pop-craft/backend/internal/template"
 	fpdf "github.com/go-pdf/fpdf"
@@ -117,9 +118,11 @@ func hexToRGB(hex string) (int, int, int) {
 		var r, g, b int
 		_, err := fmt.Sscanf(hex, "#%02x%02x%02x", &r, &g, &b)
 		if err != nil {
+			log.Printf("hexToRGB: failed to parse hex color %q: %v; falling back to black", hex, err)
 			return 0, 0, 0
 		}
 		return r, g, b
 	}
+	log.Printf("hexToRGB: invalid hex color %q (expected #RRGGBB); falling back to black", hex)
 	return 0, 0, 0
 }

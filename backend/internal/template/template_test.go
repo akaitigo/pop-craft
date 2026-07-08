@@ -52,6 +52,50 @@ func TestByID(t *testing.T) {
 	}
 }
 
+func TestCategories(t *testing.T) {
+	cats := template.Categories()
+	if len(cats) != 3 {
+		t.Fatalf("expected 3 categories, got %d", len(cats))
+	}
+	want := map[template.Category]bool{
+		template.Supermarket: true,
+		template.Drugstore:   true,
+		template.Bookstore:   true,
+	}
+	for _, c := range cats {
+		if !want[c] {
+			t.Errorf("unexpected category %q", c)
+		}
+		delete(want, c)
+	}
+	if len(want) != 0 {
+		t.Errorf("missing categories: %v", want)
+	}
+}
+
+func TestIsValidCategory(t *testing.T) {
+	tests := []struct {
+		category string
+		want     bool
+	}{
+		{"supermarket", true},
+		{"drugstore", true},
+		{"bookstore", true},
+		{"", false},
+		{"unknown", false},
+		{"Supermarket", false}, // case-sensitive
+		{"supermarket ", false},
+		{"'; DROP TABLE templates; --", false},
+	}
+	for _, tt := range tests {
+		t.Run(tt.category, func(t *testing.T) {
+			if got := template.IsValidCategory(tt.category); got != tt.want {
+				t.Errorf("IsValidCategory(%q) = %v, want %v", tt.category, got, tt.want)
+			}
+		})
+	}
+}
+
 func TestUniqueIDs(t *testing.T) {
 	all := template.All()
 	seen := map[string]bool{}
