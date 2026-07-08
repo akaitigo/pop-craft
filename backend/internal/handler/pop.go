@@ -2,8 +2,11 @@ package handler
 
 import (
 	"encoding/json"
+	"fmt"
 	"log"
 	"net/http"
+	"strings"
+	"time"
 
 	"github.com/akaitigo/pop-craft/backend/internal/model"
 	"github.com/akaitigo/pop-craft/backend/internal/pdf"
@@ -68,9 +71,28 @@ func GeneratePDF(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	filename := fmt.Sprintf("pop-%s-%d.pdf", safeFilenamePart(req.TemplateID), time.Now().Unix())
 	w.Header().Set("Content-Type", "application/pdf")
-	w.Header().Set("Content-Disposition", "attachment; filename=pop.pdf")
+	w.Header().Set("Content-Disposition", fmt.Sprintf("attachment; filename=%q", filename))
 	if _, err := w.Write(data); err != nil {
 		log.Printf("failed to write pdf response: %v", err)
 	}
+}
+
+// safeFilenamePart strips any character that is not an ASCII letter, digit,
+// hyphen or underscore so user-supplied values (e.g. the template ID) cannot
+// inject characters into the Content-Disposition header or the file name.
+// It falls back to "pop" when nothing usable remains.
+func safeFilenamePart(s string) string {
+	var b strings.Builder
+	for _, r := range s {
+		switch {
+		case r >= 'a' && r <= 'z', r >= 'A' && r <= 'Z', r >= '0' && r <= '9', r == '-', r == '_':
+			b.WriteRune(r)
+		}
+	}
+	if b.Len() == 0 {
+		return "pop"
+	}
+	return b.String()
 }

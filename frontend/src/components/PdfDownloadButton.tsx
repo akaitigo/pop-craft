@@ -21,7 +21,9 @@ export function PdfDownloadButton({ request, disabled }: PdfDownloadButtonProps)
       const url = URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url;
-      a.download = `pop-${request.template_id}-${Date.now()}.pdf`;
+      // Match the backend Content-Disposition format: pop-<templateID>-<unix>.pdf
+      const unix = Math.floor(Date.now() / 1000);
+      a.download = `pop-${request.template_id}-${unix}.pdf`;
       document.body.appendChild(a);
       a.click();
       document.body.removeChild(a);

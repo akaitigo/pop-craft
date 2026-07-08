@@ -43,7 +43,7 @@ func (r *Renderer) Render(w io.Writer) error {
 	pdf.AddPage()
 
 	fontSize := func(base float64) float64 {
-		return base * (width / 210.0)
+		return scaledFontSize(base, width)
 	}
 
 	// Background color from template
@@ -111,6 +111,22 @@ func (r *Renderer) Render(w io.Writer) error {
 	}
 
 	return pdf.Output(w)
+}
+
+// minFontSize is the smallest font size (in pt) the renderer will emit. Font
+// sizes are defined for A4 width and scaled down for smaller papers; without a
+// floor, card-sized output (55mm wide) shrinks 24pt text to ~6.3pt, which is
+// hard to read.
+const minFontSize = 7.0
+
+// scaledFontSize scales a base font size, defined for A4 width (210mm), to the
+// given paper width, clamping the result to minFontSize.
+func scaledFontSize(base, width float64) float64 {
+	size := base * (width / 210.0)
+	if size < minFontSize {
+		return minFontSize
+	}
+	return size
 }
 
 func hexToRGB(hex string) (int, int, int) {
