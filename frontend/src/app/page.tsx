@@ -98,7 +98,9 @@ export default function Home() {
                     <p className="text-sm mt-1">{templateError}</p>
                     <button
                       type="button"
-                      onClick={() => setCategory(state.category!)}
+                      onClick={() => {
+                        if (state.category) setCategory(state.category);
+                      }}
                       className="mt-2 text-sm underline hover:no-underline"
                     >
                       再試行

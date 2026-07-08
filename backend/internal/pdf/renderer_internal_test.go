@@ -3,10 +3,39 @@ package pdf
 import (
 	"bytes"
 	"log"
+	"math"
 	"os"
 	"strings"
 	"testing"
 )
+
+func TestScaledFontSize(t *testing.T) {
+	tests := []struct {
+		name  string
+		base  float64
+		width float64
+		want  float64
+	}{
+		{"a4 no scaling", 24, 210, 24},
+		{"a4 large base", 36, 210, 36},
+		{"a5 scaled down", 24, 148, 24.0 * (148.0 / 210.0)},
+		{"card clamps to min", 24, 55, minFontSize},     // 6.28 -> 7
+		{"card small base clamps", 10, 55, minFontSize}, // 2.62 -> 7
+		{"card large base no clamp", 36, 55, 36.0 * (55.0 / 210.0)},
+		{"exactly min not clamped", minFontSize, 210, minFontSize},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got := scaledFontSize(tt.base, tt.width)
+			if math.Abs(got-tt.want) > 1e-9 {
+				t.Errorf("scaledFontSize(%v, %v) = %v, want %v", tt.base, tt.width, got, tt.want)
+			}
+			if got < minFontSize {
+				t.Errorf("scaledFontSize(%v, %v) = %v is below minFontSize %v", tt.base, tt.width, got, minFontSize)
+			}
+		})
+	}
+}
 
 func TestHexToRGB_Valid(t *testing.T) {
 	tests := []struct {

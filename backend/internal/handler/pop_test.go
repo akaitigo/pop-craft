@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
+	"regexp"
 	"testing"
 
 	"github.com/akaitigo/pop-craft/backend/internal/handler"
@@ -106,6 +107,35 @@ func TestGeneratePDF_Valid(t *testing.T) {
 	cd := resp.Header.Get("Content-Disposition")
 	if cd == "" {
 		t.Error("expected Content-Disposition header")
+	}
+}
+
+func TestGeneratePDF_DynamicFilename(t *testing.T) {
+	body := map[string]interface{}{
+		"product_name": "りんご",
+		"price":        198,
+		"template_id":  "super-recommend",
+		"paper_size":   "a4",
+	}
+	b, _ := json.Marshal(body)
+	req := httptest.NewRequest(http.MethodPost, "/api/v1/pop/pdf", bytes.NewReader(b))
+	req.Header.Set("Content-Type", "application/json")
+	w := httptest.NewRecorder()
+
+	handler.GeneratePDF(w, req)
+
+	resp := w.Result()
+	defer resp.Body.Close()
+
+	cd := resp.Header.Get("Content-Disposition")
+	// Expect a dynamic name of the form pop-<templateID>-<unix>.pdf, no longer
+	// the static pop.pdf.
+	want := regexp.MustCompile(`^attachment; filename="pop-super-recommend-\d+\.pdf"$`)
+	if !want.MatchString(cd) {
+		t.Errorf("Content-Disposition = %q, want match %v", cd, want)
+	}
+	if cd == `attachment; filename=pop.pdf` {
+		t.Error("Content-Disposition is still the static pop.pdf")
 	}
 }
 

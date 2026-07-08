@@ -226,6 +226,13 @@ function contrastColor(hex: string): string {
   return luminance > 0.5 ? "#000000" : "#FFFFFF";
 }
 
-function scale(base: number, canvasWidth: number): number {
-  return Math.round(base * (canvasWidth / 420));
+// MIN_FONT_SIZE is the smallest font size (in px) the canvas renderer will
+// emit. Sizes are defined for a 420px-wide reference canvas and scaled down for
+// narrower ones; the floor keeps small papers (e.g. card size) legible, mirroring
+// the backend PDF renderer's minFontSize guard.
+export const MIN_FONT_SIZE = 7;
+
+export function scale(base: number, canvasWidth: number): number {
+  const size = Math.round(base * (canvasWidth / 420));
+  return Math.max(size, MIN_FONT_SIZE);
 }

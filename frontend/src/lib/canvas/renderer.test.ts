@@ -4,6 +4,8 @@ import {
   drawBackground,
   drawAccentBar,
   drawPrice,
+  scale,
+  MIN_FONT_SIZE,
 } from "./renderer";
 
 describe("getCanvasDimensions", () => {
@@ -30,6 +32,31 @@ describe("getCanvasDimensions", () => {
     const dims = getCanvasDimensions("a4", 210);
     expect(dims.width).toBe(210);
     expect(dims.height).toBe(297);
+  });
+});
+
+describe("scale", () => {
+  it("returns the base size at the reference width (420px)", () => {
+    expect(scale(28, 420)).toBe(28);
+    expect(scale(10, 420)).toBe(10);
+  });
+
+  it("scales down proportionally for narrower canvases", () => {
+    expect(scale(36, 210)).toBe(18);
+  });
+
+  it("clamps to MIN_FONT_SIZE for very small canvases", () => {
+    // 24 * (55/420) ≈ 3.1, below the floor
+    expect(scale(24, 55)).toBe(MIN_FONT_SIZE);
+    expect(scale(10, 55)).toBe(MIN_FONT_SIZE);
+  });
+
+  it("never returns below MIN_FONT_SIZE", () => {
+    for (const base of [8, 10, 12, 14, 24, 28, 36]) {
+      for (const width of [40, 55, 91, 210, 420]) {
+        expect(scale(base, width)).toBeGreaterThanOrEqual(MIN_FONT_SIZE);
+      }
+    }
   });
 });
 
