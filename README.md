@@ -32,7 +32,7 @@ cd backend && go run ./cmd/server
 | Frontend | TypeScript / Next.js 15 (App Router) / TailwindCSS |
 | POP描画 | Canvas API |
 | バリデーション | Zod |
-| Backend API | Go 1.23 / chi router |
+| Backend API | Go 1.26.5 / chi router |
 | PDF生成 | go-fpdf |
 | Database | PostgreSQL |
 | CI | GitHub Actions |
