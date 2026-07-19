@@ -3,6 +3,7 @@ frontend/node_modules/
 
 # Build
 frontend/.next/
+frontend/next-env.d.ts
 backend/bin/
 backend/server
 
