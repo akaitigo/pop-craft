@@ -1,5 +1,5 @@
-import { describe, it, expect, vi } from "vitest";
-import { render, screen } from "@testing-library/react";
+import { afterEach, describe, it, expect, vi } from "vitest";
+import { fireEvent, render, screen } from "@testing-library/react";
 import Home from "./page";
 
 // Mock canvas
@@ -14,13 +14,9 @@ const mockContext = {
 };
 HTMLCanvasElement.prototype.getContext = vi.fn().mockReturnValue(mockContext);
 
-// Mock API
-vi.mock("@/lib/api", () => ({
-  getTemplatesByCategory: vi.fn().mockResolvedValue([]),
-  listTemplates: vi.fn().mockResolvedValue([]),
-  generatePDF: vi.fn(),
-  previewPOP: vi.fn(),
-}));
+afterEach(() => {
+  vi.restoreAllMocks();
+});
 
 describe("Home Page", () => {
   it("renders the POP-Craft title", () => {
@@ -47,5 +43,32 @@ describe("Home Page", () => {
     expect(
       screen.getByText("業態とテンプレートを選択すると")
     ).toBeInTheDocument();
+  });
+
+  it("shows bundled templates without an API request", () => {
+    const fetchSpy = vi.spyOn(globalThis, "fetch");
+    render(<Home />);
+
+    fireEvent.click(screen.getByRole("button", { name: /スーパー/ }));
+
+    expect(screen.getByText("本日のおすすめ")).toBeInTheDocument();
+    expect(screen.getByText("店長イチオシ")).toBeInTheDocument();
+    expect(fetchSpy).not.toHaveBeenCalled();
+    fetchSpy.mockRestore();
+  });
+
+  it("opens a print-only preview", () => {
+    render(<Home />);
+
+    fireEvent.click(screen.getByRole("button", { name: /スーパー/ }));
+    fireEvent.click(
+      screen.getByRole("button", { name: /本日のおすすめ/ })
+    );
+    fireEvent.click(screen.getByRole("button", { name: "印刷・PDF保存" }));
+
+    expect(
+      screen.getByRole("dialog", { name: "印刷プレビュー" })
+    ).toBeInTheDocument();
+    expect(screen.getByRole("main")).toHaveClass("print:hidden");
   });
 });
