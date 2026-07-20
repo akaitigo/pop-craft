@@ -1,6 +1,6 @@
-.PHONY: check dev dev-backend test lint build clean
+.PHONY: check dev dev-backend test lint build cloudflare-validate cloudflare-preview clean
 
-check: lint test build
+check: lint test build cloudflare-validate
 	@echo "All checks passed"
 
 dev:
@@ -20,6 +20,15 @@ lint:
 build:
 	cd frontend && pnpm build
 	cd backend && go build -o bin/server ./cmd/server
+
+cloudflare-validate:
+	node --test scripts/verify-static-assets.test.mjs
+	node scripts/verify-static-assets.mjs
+	cd frontend && pnpm exec wrangler deploy --dry-run --config ../wrangler.jsonc
+
+cloudflare-preview:
+	cd frontend && pnpm build
+	cd frontend && pnpm exec wrangler dev --config ../wrangler.jsonc
 
 clean:
 	rm -rf frontend/.next frontend/node_modules backend/bin

@@ -12,6 +12,7 @@
 - TS: Zod でランタイムバリデーション, TailwindCSS
 - テストファイルは対象と同じディレクトリに配置
 - 本番画面へAPI依存を再導入する場合は、コスト・プライバシー・運用負荷をADRで再評価する
+- Cloudflareの外部Preview、Production deploy、secret登録はユーザー承認なしに実行しない
 
 ## テンプレート体系
 - 業態: supermarket, drugstore, bookstore

@@ -31,6 +31,9 @@ jobs:
       - run: pnpm typecheck
       - run: pnpm test -- --run
       - run: pnpm build
+      - run: node --test ../scripts/verify-static-assets.test.mjs
+      - run: node ../scripts/verify-static-assets.mjs
+      - run: pnpm exec wrangler deploy --dry-run --config ../wrangler.jsonc
 
   backend:
     runs-on: ubuntu-latest

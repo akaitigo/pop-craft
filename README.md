@@ -60,6 +60,8 @@ cd frontend && pnpm install && pnpm dev
 make check    # lint + test + build
 make dev      # 静的frontendを開発モードで起動
 make dev-backend # 比較検証用Go APIを起動
+make cloudflare-validate # Static Assets上限・header・dry-runを検証
+make cloudflare-preview  # Wranglerでローカル配信（外部公開なし）
 make test     # 全テスト実行
 make lint     # 全lint実行
 make build    # 全ビルド
@@ -100,6 +102,7 @@ pop-craft/
 
 - [PRD](docs/PRD.md) — プロダクト要件定義
 - [印刷ガイド](docs/PRINTING.md) — 対応用紙・設定・検証済みブラウザ
+- [デプロイrunbook](docs/DEPLOYMENT.md) — Cloudflare Preview / Production / rollback
 - [ADR-001](docs/adr/001-template-storage-strategy.md) — テンプレート保存戦略
 - [ADR-002](docs/adr/002-canvas-api-for-preview.md) — Canvas API採用理由
 - [ADR-003](docs/adr/ADR-003-static-first-deployment.md) — 固定費0円のブラウザ完結構成

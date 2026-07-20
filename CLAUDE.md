@@ -13,6 +13,8 @@
 make check          # lint + test + build 全チェック
 make dev            # frontendを開発モードで起動
 make dev-backend    # 比較検証用Go APIを起動
+make cloudflare-validate # Static Assets成果物とdry-runを検証
+make cloudflare-preview  # Wranglerのローカル配信
 make test           # 全テスト実行
 make lint           # 全lint実行
 make build          # 全ビルド
@@ -43,3 +45,4 @@ golangci-lint run    # lint
 - 本番用テンプレートの正本: `frontend/src/data/templates.ts`
 - 本番画面へGo API依存を再導入する場合は、コスト・プライバシー・運用負荷をADRで再評価する
 - 印刷: A4/A5/名刺を300 DPIで描画し、mm単位で出力する。変更時は`docs/PRINTING.md`の実PDF検証を再実行する
+- Cloudflare: 外部Preview、Production deploy、secret登録はユーザー承認後のみ。`docs/DEPLOYMENT.md`に従う
