@@ -23,19 +23,6 @@ export interface Template {
   accent_color: string;
 }
 
-export interface POPRequest {
-  product_name: string;
-  price: number;
-  price_type: PriceType;
-  catchphrase: string;
-  description: string;
-  template_id: string;
-  font_family: FontFamily;
-  color_scheme: string;
-  paper_size: PaperSize;
-}
-
-
 export const CATEGORY_LABELS: Record<Category, string> = {
   supermarket: "スーパー",
   drugstore: "ドラッグストア",

@@ -54,23 +54,6 @@ describe("usePopState", () => {
     expect(result.current.state.price).toBe(198);
   });
 
-  it("toPOPRequest returns null without template", () => {
-    const { result } = renderHook(() => usePopState());
-    expect(result.current.toPOPRequest()).toBeNull();
-  });
-
-  it("toPOPRequest returns valid request with template and name", () => {
-    const { result } = renderHook(() => usePopState());
-    act(() => {
-      result.current.setTemplate(mockTemplate);
-      result.current.setProductInfo({ productName: "りんご", price: 198 });
-    });
-    const req = result.current.toPOPRequest();
-    expect(req).not.toBeNull();
-    expect(req?.product_name).toBe("りんご");
-    expect(req?.template_id).toBe("super-recommend");
-  });
-
   it("setFontSize updates individual font sizes", () => {
     const { result } = renderHook(() => usePopState());
     act(() => {

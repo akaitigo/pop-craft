@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { CategorySelector } from "@/components/CategorySelector";
 import { TemplateGrid } from "@/components/TemplateGrid";
 import { ProductForm } from "@/components/ProductForm";
@@ -9,12 +9,10 @@ import { FontSelector } from "@/components/FontSelector";
 import { ColorPicker } from "@/components/ColorPicker";
 import { LayoutControls } from "@/components/LayoutControls";
 import { PaperSizeSelector } from "@/components/PaperSizeSelector";
-import { PdfDownloadButton } from "@/components/PdfDownloadButton";
 import { StepIndicator } from "@/components/StepIndicator";
 import { PrintPreview } from "@/components/PrintPreview";
 import { usePopState } from "@/hooks/usePopState";
-import { getTemplatesByCategory } from "@/lib/api";
-import type { Template } from "@/types/pop";
+import { getTemplatesByCategory } from "@/data/templates";
 
 export default function Home() {
   const {
@@ -27,32 +25,14 @@ export default function Home() {
     setColorScheme,
     setCustomColors,
     setFontSize,
-    toPOPRequest,
     primaryColor,
     accentColor,
   } = usePopState();
 
-  const [templates, setTemplates] = useState<Template[]>([]);
-  const [templateError, setTemplateError] = useState<string | null>(null);
-  const [templateLoading, setTemplateLoading] = useState(false);
   const [showPrintPreview, setShowPrintPreview] = useState(false);
-
-  useEffect(() => {
-    if (!state.category) return;
-    setTemplateError(null);
-    setTemplateLoading(true);
-    getTemplatesByCategory(state.category)
-      .then(setTemplates)
-      .catch((err: unknown) => {
-        setTemplates([]);
-        setTemplateError(
-          err instanceof Error ? err.message : "テンプレートの取得に失敗しました"
-        );
-      })
-      .finally(() => setTemplateLoading(false));
-  }, [state.category]);
-
-  const popRequest = toPOPRequest();
+  const templates = state.category
+    ? getTemplatesByCategory(state.category)
+    : [];
 
   const steps = [
     { label: "業態選択", completed: state.category !== null, active: state.category === null },
@@ -61,7 +41,8 @@ export default function Home() {
   ];
 
   return (
-    <main className="min-h-screen bg-gray-50">
+    <>
+      <main className="min-h-screen bg-gray-50 print:hidden">
       <header className="bg-white shadow-sm border-b">
         <div className="container mx-auto px-4 py-4">
           <h1 className="text-2xl font-bold text-center">POP-Craft</h1>
@@ -90,29 +71,11 @@ export default function Home() {
             {state.category && (
               <section>
                 <h2 className="text-lg font-semibold mb-3">テンプレートを選択</h2>
-                {templateLoading ? (
-                  <p className="text-center text-gray-400 py-8">読み込み中...</p>
-                ) : templateError ? (
-                  <div className="bg-red-50 border border-red-200 rounded-lg p-4 text-red-700">
-                    <p className="font-medium">テンプレートの取得に失敗しました</p>
-                    <p className="text-sm mt-1">{templateError}</p>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        if (state.category) setCategory(state.category);
-                      }}
-                      className="mt-2 text-sm underline hover:no-underline"
-                    >
-                      再試行
-                    </button>
-                  </div>
-                ) : (
-                  <TemplateGrid
-                    templates={templates}
-                    selectedId={state.template?.id ?? null}
-                    onSelect={setTemplate}
-                  />
-                )}
+                <TemplateGrid
+                  templates={templates}
+                  selectedId={state.template?.id ?? null}
+                  onSelect={setTemplate}
+                />
               </section>
             )}
 
@@ -169,14 +132,16 @@ export default function Home() {
                 </section>
 
                 <section className="space-y-3">
-                  {popRequest && <PdfDownloadButton request={popRequest} />}
                   <button
                     type="button"
                     onClick={() => setShowPrintPreview(true)}
                     className="w-full py-3 rounded-lg font-bold text-lg bg-blue-600 text-white hover:bg-blue-700 transition-all"
                   >
-                    印刷プレビュー
+                    印刷・PDF保存
                   </button>
+                  <p className="text-xs text-gray-500 text-center">
+                    印刷画面で「PDFに保存」を選択できます
+                  </p>
                 </section>
               </>
             )}
@@ -214,6 +179,8 @@ export default function Home() {
         </div>
       </div>
 
+      </main>
+
       <PrintPreview
         open={showPrintPreview}
         onClose={() => setShowPrintPreview(false)}
@@ -229,6 +196,6 @@ export default function Home() {
         accentColor={accentColor}
         fontSize={state.fontSize}
       />
-    </main>
+    </>
   );
 }

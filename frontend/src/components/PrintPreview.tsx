@@ -131,7 +131,7 @@ export function PrintPreview({
     >
       <div
         ref={dialogRef}
-        className="bg-white rounded-lg p-6 max-w-2xl w-full max-h-[90vh] overflow-auto print:shadow-none print:p-0"
+        className="bg-white rounded-lg p-6 max-w-2xl w-full max-h-[90vh] overflow-auto print:shadow-none print:p-0 print:max-w-none print:w-auto print:max-h-none print:overflow-visible print:rounded-none"
       >
         <div className="flex justify-between items-center mb-4 print:hidden">
           <h2 className="text-lg font-bold">印刷プレビュー</h2>
@@ -141,7 +141,7 @@ export function PrintPreview({
               onClick={handlePrint}
               className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
             >
-              印刷
+              印刷・PDF保存
             </button>
             <button
               ref={closeButtonRef}

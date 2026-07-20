@@ -1,13 +1,13 @@
-.PHONY: check dev test lint build clean
+.PHONY: check dev dev-backend test lint build clean
 
 check: lint test build
 	@echo "All checks passed"
 
 dev:
-	@echo "Starting dev servers..."
-	cd frontend && pnpm dev &
-	cd backend && go run ./cmd/server &
-	wait
+	cd frontend && pnpm dev
+
+dev-backend:
+	cd backend && go run ./cmd/server
 
 test:
 	cd frontend && pnpm test -- --run

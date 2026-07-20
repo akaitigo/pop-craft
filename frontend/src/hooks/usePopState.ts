@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useCallback } from "react";
-import type { Category, Template, PaperSize, FontFamily, PriceType, POPRequest } from "@/types/pop";
+import type { Category, Template, PaperSize, FontFamily, PriceType } from "@/types/pop";
 import type { ColorScheme } from "@/lib/canvas/colors";
 
 export interface PopState {
@@ -104,21 +104,6 @@ export function usePopState() {
     []
   );
 
-  const toPOPRequest = useCallback((): POPRequest | null => {
-    if (!state.template || !state.productName) return null;
-    return {
-      product_name: state.productName,
-      price: state.price,
-      price_type: state.priceType,
-      catchphrase: state.catchphrase,
-      description: state.description,
-      template_id: state.template.id,
-      font_family: state.fontFamily,
-      color_scheme: state.colorSchemeId,
-      paper_size: state.paperSize,
-    };
-  }, [state]);
-
   const primaryColor = state.customPrimaryColor ?? state.template?.primary_color ?? "#333333";
   const accentColor = state.customAccentColor ?? state.template?.accent_color ?? "#FFFFFF";
 
@@ -132,7 +117,6 @@ export function usePopState() {
     setColorScheme,
     setCustomColors,
     setFontSize,
-    toPOPRequest,
     primaryColor,
     accentColor,
   };
