@@ -48,7 +48,7 @@
 | POP描画 | Canvas API |
 | テンプレート | 型付きTypeScript静的データ |
 | 印刷・PDF保存 | Browser Print API |
-| 本番インフラ | 静的ホスティング（Cloudflare Workers Static Assetsを第一候補） |
+| 本番インフラ | Cloudflare Workers Static Assets（外部公開はユーザー承認後） |
 | Backend | Go実装は比較検証用に保管。本番サイトからは未使用 |
 
 ## アーキテクチャ

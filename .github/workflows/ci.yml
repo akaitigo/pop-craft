@@ -16,11 +16,11 @@ jobs:
       run:
         working-directory: frontend
     steps:
-      - uses: actions/checkout@v7
-      - uses: pnpm/action-setup@v4
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+      - uses: pnpm/action-setup@b906affcce14559ad1aafd4ab0e942779e9f58b1 # v4.3.0
         with:
           version: 9
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
         with:
           node-version: "22"
           cache: pnpm
@@ -31,6 +31,9 @@ jobs:
       - run: pnpm typecheck
       - run: pnpm test -- --run
       - run: pnpm build
+      - run: node --test ../scripts/verify-static-assets.test.mjs
+      - run: node ../scripts/verify-static-assets.mjs
+      - run: pnpm exec wrangler deploy --dry-run --config ../wrangler.jsonc
 
   backend:
     runs-on: ubuntu-latest
@@ -38,8 +41,8 @@ jobs:
       run:
         working-directory: backend
     steps:
-      - uses: actions/checkout@v7
-      - uses: actions/setup-go@v5
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+      - uses: actions/setup-go@40f1582b2485089dde7abd97c1529aa768e1baff # v5.6.0
         with:
           go-version: "1.26.5"
           cache-dependency-path: backend/go.sum
