@@ -12,6 +12,9 @@ const VALID_HEADERS = `/*
   X-Frame-Options: DENY
   Referrer-Policy: strict-origin-when-cross-origin
   Permissions-Policy: camera=()
+
+/_next/static/*
+  Cache-Control: public, max-age=31536000, immutable
 `;
 
 async function createFixture() {
@@ -37,7 +40,21 @@ test("必須headerの欠落を拒否する", async (t) => {
 
   await assert.rejects(
     verifyStaticAssets(directory),
-    /必須セキュリティヘッダーがありません/
+    /global ruleに必須headerがありません/
+  );
+});
+
+test("別routeのheaderでglobal ruleの欠落を隠せない", async (t) => {
+  const directory = await createFixture();
+  t.after(() => rm(directory, { recursive: true, force: true }));
+  await writeFile(
+    path.join(directory, "_headers"),
+    VALID_HEADERS.replace("/*", "/admin/*")
+  );
+
+  await assert.rejects(
+    verifyStaticAssets(directory),
+    /global header rule `\/\*` がありません/
   );
 });
 

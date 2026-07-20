@@ -8,14 +8,14 @@ export const FREE_FILE_LIMIT = 20_000;
 export const FILE_SIZE_LIMIT = 25 * 1024 * 1024;
 
 const REQUIRED_FILES = ["index.html", "404.html", "_headers"];
-const REQUIRED_HEADERS = [
-  "Content-Security-Policy:",
-  "Strict-Transport-Security:",
-  "X-Content-Type-Options: nosniff",
-  "X-Frame-Options: DENY",
-  "Referrer-Policy:",
-  "Permissions-Policy:",
-];
+const REQUIRED_GLOBAL_HEADERS = new Map([
+  ["content-security-policy", null],
+  ["strict-transport-security", null],
+  ["x-content-type-options", "nosniff"],
+  ["x-frame-options", "DENY"],
+  ["referrer-policy", "strict-origin-when-cross-origin"],
+  ["permissions-policy", null],
+]);
 const REQUIRED_CSP_DIRECTIVES = [
   "default-src 'self'",
   "object-src 'none'",
@@ -78,6 +78,35 @@ function isTextFile(relativePath) {
   );
 }
 
+function parseHeaderRules(content) {
+  const rules = new Map();
+  let currentHeaders;
+
+  for (const rawLine of content.split(/\r?\n/)) {
+    const line = rawLine.trim();
+    if (!line || line.startsWith("#")) continue;
+
+    if (!/^\s/.test(rawLine)) {
+      currentHeaders = new Map();
+      rules.set(line, currentHeaders);
+      continue;
+    }
+
+    if (!currentHeaders) {
+      throw new Error(`routeより前にheaderがあります: ${line}`);
+    }
+    const separator = line.indexOf(":");
+    if (separator <= 0) {
+      throw new Error(`不正なheader行です: ${line}`);
+    }
+    const name = line.slice(0, separator).trim().toLowerCase();
+    const value = line.slice(separator + 1).trim();
+    currentHeaders.set(name, value);
+  }
+
+  return rules;
+}
+
 export async function verifyStaticAssets(outputDirectory) {
   const files = await collectFiles(outputDirectory);
   const relativePaths = new Set(files.map((file) => file.relativePath));
@@ -115,15 +144,39 @@ export async function verifyStaticAssets(outputDirectory) {
 
   if (relativePaths.has("_headers")) {
     const headers = await readFile(path.join(outputDirectory, "_headers"), "utf8");
-    for (const requiredHeader of REQUIRED_HEADERS) {
-      if (!headers.includes(requiredHeader)) {
-        errors.push(`必須セキュリティヘッダーがありません: ${requiredHeader}`);
+    let rules;
+    try {
+      rules = parseHeaderRules(headers);
+    } catch (error) {
+      errors.push(error instanceof Error ? error.message : String(error));
+    }
+
+    const globalHeaders = rules?.get("/*");
+    if (!globalHeaders) {
+      errors.push("global header rule `/*` がありません");
+    } else {
+      for (const [name, expectedValue] of REQUIRED_GLOBAL_HEADERS) {
+        const actualValue = globalHeaders.get(name);
+        if (actualValue === undefined) {
+          errors.push(`global ruleに必須headerがありません: ${name}`);
+        } else if (expectedValue !== null && actualValue !== expectedValue) {
+          errors.push(
+            `global ruleのheader値が不正です: ${name}: ${actualValue}`
+          );
+        }
+      }
+
+      const csp = globalHeaders.get("content-security-policy") ?? "";
+      for (const directive of REQUIRED_CSP_DIRECTIVES) {
+        if (!csp.includes(directive)) {
+          errors.push(`global ruleに必須CSP directiveがありません: ${directive}`);
+        }
       }
     }
-    for (const directive of REQUIRED_CSP_DIRECTIVES) {
-      if (!headers.includes(directive)) {
-        errors.push(`必須CSP directiveがありません: ${directive}`);
-      }
+
+    const staticCache = rules?.get("/_next/static/*")?.get("cache-control");
+    if (staticCache !== "public, max-age=31536000, immutable") {
+      errors.push("fingerprinted assetのimmutable cache ruleが不正です");
     }
   }
 

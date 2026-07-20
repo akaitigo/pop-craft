@@ -67,8 +67,10 @@ make cloudflare-preview
 4. GitHub repositoryの`preview`と`production` environmentへ次をsecret登録する
    - `CLOUDFLARE_ACCOUNT_ID`
    - `CLOUDFLARE_API_TOKEN`
-5. `production` environmentへ本人をrequired reviewerとして設定する
-6. Cloudflare dashboardでWorkers Logs、R2、D1、KV等が未使用であることを確認する
+5. `preview`と`production`の両environmentへ本人をrequired reviewerとして設定する
+   - 個人運用では自分で承認できるよう`Prevent self-review`を有効にしない
+6. `production` environmentのdeployment branchを`main`だけへ制限する
+7. Cloudflare dashboardでWorkers Logs、R2、D1、KV等が未使用であることを確認する
 
 API tokenは[Cloudflare公式GitHub Actions手順](https://developers.cloudflare.com/workers/ci-cd/external-cicd/github-actions/)に従い、リポジトリへ保存しません。
 
@@ -78,9 +80,10 @@ Preview URLは公開されるため、ユーザーの公開承認後にのみ実
 
 1. GitHub Actionsから「Cloudflareへ手動デプロイ」を選ぶ
 2. `target=preview`、`confirmation=PREVIEW`を指定する
-3. workflowが`wrangler versions upload --preview-alias staging`を実行する
-4. 出力されたURLでsmoke testを行う
-5. 問題があればProductionへ進まず、Issue化して修正する
+3. `preview` environmentの承認画面で内容を再確認する
+4. workflowが`wrangler versions upload --preview-alias staging`を実行する
+5. 出力されたURLでsmoke testを行う
+6. 問題があればProductionへ進まず、Issue化して修正する
 
 Preview URLの仕様は[Cloudflare公式Preview URLs](https://developers.cloudflare.com/workers/versions-and-deployments/preview-urls/)を参照してください。Preview URLはログ収集に対応しないため、ブラウザ確認とGitHub Actionsの結果を証跡にします。
 
@@ -88,11 +91,12 @@ Preview URLの仕様は[Cloudflare公式Preview URLs](https://developers.cloudfl
 
 1. Previewのsmoke test結果をPRまたはIssueへ記録する
 2. ユーザーが本番公開を最終承認する
-3. GitHub Actionsで`target=production`、`confirmation=DEPLOY`を指定する
+3. GitHub Actionsのbranchを`main`にし、`target=production`、`confirmation=DEPLOY`を指定する
 4. `production` environmentの承認画面で内容を再確認する
 5. deploy後10分以内にsmoke testを行う
 
 workflow_dispatch以外のpush、PR、scheduleではdeployしません。
+workflow内でもproductionは`refs/heads/main`以外から失敗させ、GitHub environment側のdeployment branch制限と二重化します。
 
 ## Smoke test
 
