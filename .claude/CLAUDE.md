@@ -16,4 +16,4 @@
 ## テンプレート体系
 - 業態: supermarket, drugstore, bookstore
 - パターン: recommendation, limited, staff_pick, new_arrival, sale
-- 用紙: a4, a5, card (名刺サイズ)。現状は縦横比のみ反映し、実寸指定はIssue #37で追跡する
+- 用紙: a4, a5, card (名刺サイズ)。印刷Canvasは300 DPI、CSS用紙指定はmm単位で管理する

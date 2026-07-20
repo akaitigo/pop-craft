@@ -1,5 +1,16 @@
-import { describe, it, expect } from "vitest";
-import { FONT_DEFINITIONS, ALL_FONTS, getFontCss, getGoogleFontsUrl } from "./fonts";
+import { afterEach, describe, it, expect, vi } from "vitest";
+import {
+  FONT_DEFINITIONS,
+  ALL_FONTS,
+  FONT_LOAD_SAMPLE,
+  getFontCss,
+  getGoogleFontsUrl,
+  loadCanvasFont,
+} from "./fonts";
+
+afterEach(() => {
+  vi.useRealTimers();
+});
 
 describe("FONT_DEFINITIONS", () => {
   it("has all 4 font families", () => {
@@ -49,5 +60,48 @@ describe("getGoogleFontsUrl", () => {
   it("starts with Google Fonts URL", () => {
     const url = getGoogleFontsUrl();
     expect(url).toMatch(/^https:\/\/fonts\.googleapis\.com\/css2\?/);
+  });
+});
+
+describe("loadCanvasFont", () => {
+  it("loads the selected Japanese font before reporting ready", async () => {
+    const fontFace = {} as FontFace;
+    const load = vi.fn().mockResolvedValue([fontFace]);
+
+    await expect(
+      loadCanvasFont("gothic", { fontLoader: { load } })
+    ).resolves.toBe(true);
+    expect(load).toHaveBeenCalledWith(
+      "700 32px 'Noto Sans JP'",
+      FONT_LOAD_SAMPLE
+    );
+  });
+
+  it("returns false when the font request fails", async () => {
+    const load = vi.fn().mockRejectedValue(new Error("network unavailable"));
+
+    await expect(
+      loadCanvasFont("mincho", { fontLoader: { load } })
+    ).resolves.toBe(false);
+  });
+
+  it("returns false when no matching font face is loaded", async () => {
+    const load = vi.fn().mockResolvedValue([]);
+
+    await expect(
+      loadCanvasFont("brush", { fontLoader: { load } })
+    ).resolves.toBe(false);
+  });
+
+  it("uses a timeout when font loading does not settle", async () => {
+    vi.useFakeTimers();
+    const load = vi.fn().mockReturnValue(new Promise<FontFace[]>(() => {}));
+    const result = loadCanvasFont("handwritten", {
+      fontLoader: { load },
+      timeoutMs: 50,
+    });
+
+    await vi.advanceTimersByTimeAsync(50);
+    await expect(result).resolves.toBe(false);
   });
 });

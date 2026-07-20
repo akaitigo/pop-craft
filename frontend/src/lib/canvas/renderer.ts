@@ -100,7 +100,7 @@ export function drawCatchphrase(
 ): void {
   if (!options.catchphrase) return;
   const font = FONT_DEFINITIONS[options.fontFamily];
-  const fontSize = options.fontSize?.catchphrase ?? scale(12, width);
+  const fontSize = scale(options.fontSize?.catchphrase ?? 12, width);
   ctx.font = `italic ${font.weight} ${fontSize}px ${font.cssFontFamily}`;
   ctx.fillStyle = "#FFFFFF";
   ctx.textAlign = "center";
@@ -115,7 +115,7 @@ export function drawProductName(
   options: RenderOptions
 ): void {
   const font = FONT_DEFINITIONS[options.fontFamily];
-  const fontSize = options.fontSize?.productName ?? scale(28, width);
+  const fontSize = scale(options.fontSize?.productName ?? 28, width);
   ctx.font = `${font.weight} ${fontSize}px ${font.cssFontFamily}`;
   ctx.fillStyle = "#FFFFFF";
   ctx.textAlign = "center";
@@ -133,7 +133,7 @@ export function drawPrice(
   options: RenderOptions
 ): void {
   const font = FONT_DEFINITIONS[options.fontFamily];
-  const fontSize = options.fontSize?.price ?? scale(36, width);
+  const fontSize = scale(options.fontSize?.price ?? 36, width);
   ctx.font = `${font.weight} ${fontSize}px ${font.cssFontFamily}`;
   ctx.fillStyle = options.accentColor;
   ctx.textAlign = "center";
