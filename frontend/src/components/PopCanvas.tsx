@@ -3,6 +3,10 @@
 import { useRef, useEffect } from "react";
 import type { PaperSize, FontFamily, Template } from "@/types/pop";
 import { renderPOP, getCanvasDimensions } from "@/lib/canvas/renderer";
+import {
+  buildCanvasFontLoadText,
+  loadCanvasFont,
+} from "@/lib/canvas/fonts";
 
 interface PopCanvasProps {
   productName: string;
@@ -36,29 +40,52 @@ export function PopCanvas({
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
   useEffect(() => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
+    let cancelled = false;
 
-    const ctx = canvas.getContext("2d");
-    if (!ctx) return;
+    const draw = () => {
+      const canvas = canvasRef.current;
+      if (!canvas) return;
 
-    const dims = getCanvasDimensions(paperSize, maxWidth);
-    canvas.width = dims.width;
-    canvas.height = dims.height;
+      const ctx = canvas.getContext("2d");
+      if (!ctx) return;
 
-    renderPOP(ctx, canvas, {
-      productName,
-      price,
-      priceType,
+      const dims = getCanvasDimensions(paperSize, maxWidth);
+      canvas.width = dims.width;
+      canvas.height = dims.height;
+
+      renderPOP(ctx, canvas, {
+        productName,
+        price,
+        priceType,
+        catchphrase,
+        description,
+        templateName: template?.name ?? "テンプレート",
+        primaryColor: template?.primary_color ?? "#333333",
+        accentColor: template?.accent_color ?? "#FFFFFF",
+        fontFamily,
+        paperSize,
+        fontSize,
+      });
+    };
+
+    // Keep the editor responsive with a fallback font, then redraw once the
+    // selected Web Font is available so Canvas captures the intended glyphs.
+    draw();
+    const fontLoadText = buildCanvasFontLoadText(
+      template?.name ?? "テンプレート",
+      productName || "商品名",
       catchphrase,
       description,
-      templateName: template?.name ?? "テンプレート",
-      primaryColor: template?.primary_color ?? "#333333",
-      accentColor: template?.accent_color ?? "#FFFFFF",
-      fontFamily,
-      paperSize,
-      fontSize,
+      `¥${price.toLocaleString()}`,
+      priceType === "tax_excluded" ? "税抜" : "税込"
+    );
+    void loadCanvasFont(fontFamily, { text: fontLoadText }).then((loaded) => {
+      if (!cancelled && loaded) draw();
     });
+
+    return () => {
+      cancelled = true;
+    };
   }, [
     productName,
     price,

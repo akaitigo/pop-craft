@@ -1,8 +1,20 @@
 "use client";
 
-import { useRef, useEffect, useCallback } from "react";
+import { useRef, useEffect, useCallback, useState } from "react";
+import type { CSSProperties } from "react";
 import type { Template, FontFamily, PaperSize } from "@/types/pop";
-import { renderPOP, getCanvasDimensions } from "@/lib/canvas/renderer";
+import { renderPOP } from "@/lib/canvas/renderer";
+import {
+  buildCanvasFontLoadText,
+  loadCanvasFont,
+} from "@/lib/canvas/fonts";
+import {
+  getPageSizeRule,
+  getPrintCanvasDimensions,
+  resolvePrintPaper,
+} from "@/lib/print";
+
+type FontLoadStatus = "loading" | "ready" | "fallback";
 
 interface PrintPreviewProps {
   open: boolean;
@@ -42,15 +54,39 @@ export function PrintPreview({
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const dialogRef = useRef<HTMLDivElement>(null);
   const closeButtonRef = useRef<HTMLButtonElement>(null);
+  const openRef = useRef(open);
+  const printGenerationRef = useRef(0);
+  const printingRef = useRef(false);
+  const [fontLoadStatus, setFontLoadStatus] =
+    useState<FontLoadStatus>("loading");
+  const [isPrinting, setIsPrinting] = useState(false);
+  const resolvedPaper = resolvePrintPaper(paperSize);
+  const printPaper = resolvedPaper.paper;
+  openRef.current = open;
+  const fontLoadText = buildCanvasFontLoadText(
+    template?.name,
+    productName || "商品名",
+    catchphrase,
+    description,
+    `¥${price.toLocaleString()}`,
+    priceType === "tax_excluded" ? "税抜" : "税込"
+  );
 
   useEffect(() => {
-    if (!open) return;
+    if (!open) {
+      printGenerationRef.current += 1;
+      printingRef.current = false;
+      setIsPrinting(false);
+    }
+  }, [open]);
+
+  const drawPrintCanvas = useCallback(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
     const ctx = canvas.getContext("2d");
     if (!ctx) return;
 
-    const dims = getCanvasDimensions(paperSize, 600);
+    const dims = getPrintCanvasDimensions(printPaper.id);
     canvas.width = dims.width;
     canvas.height = dims.height;
 
@@ -64,10 +100,42 @@ export function PrintPreview({
       primaryColor,
       accentColor,
       fontFamily,
-      paperSize,
+      paperSize: printPaper.id,
       fontSize,
     });
-  }, [open, productName, price, priceType, catchphrase, description, template, fontFamily, paperSize, primaryColor, accentColor, fontSize]);
+  }, [
+    accentColor,
+    catchphrase,
+    description,
+    fontFamily,
+    fontSize,
+    price,
+    priceType,
+    primaryColor,
+    printPaper.id,
+    productName,
+    template,
+  ]);
+
+  useEffect(() => {
+    if (!open) return;
+    let cancelled = false;
+    setFontLoadStatus("loading");
+
+    void loadCanvasFont(fontFamily, { text: fontLoadText }).then((loaded) => {
+      if (cancelled) return;
+      drawPrintCanvas();
+      setFontLoadStatus(loaded ? "ready" : "fallback");
+    });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [drawPrintCanvas, fontFamily, fontLoadText, open]);
+
+  const requestClose = useCallback(() => {
+    if (!printingRef.current) onClose();
+  }, [onClose]);
 
   // Focus trap and Escape key handler
   useEffect(() => {
@@ -78,7 +146,7 @@ export function PrintPreview({
 
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === "Escape") {
-        onClose();
+        requestClose();
         return;
       }
 
@@ -104,60 +172,124 @@ export function PrintPreview({
 
     document.addEventListener("keydown", handleKeyDown);
     return () => document.removeEventListener("keydown", handleKeyDown);
-  }, [open, onClose]);
+  }, [open, requestClose]);
 
   const handleBackdropClick = useCallback(
     (e: React.MouseEvent) => {
       if (e.target === e.currentTarget) {
-        onClose();
+        requestClose();
       }
     },
-    [onClose]
+    [requestClose]
   );
 
   if (!open) return null;
 
-  const handlePrint = () => {
-    window.print();
+  const handlePrint = async () => {
+    if (printingRef.current) return;
+    printingRef.current = true;
+    const generation = ++printGenerationRef.current;
+    setIsPrinting(true);
+    try {
+      const loaded = await loadCanvasFont(fontFamily, { text: fontLoadText });
+      if (
+        generation !== printGenerationRef.current ||
+        !openRef.current ||
+        !canvasRef.current
+      ) {
+        return;
+      }
+      drawPrintCanvas();
+      setFontLoadStatus(loaded ? "ready" : "fallback");
+      window.print();
+    } finally {
+      if (generation === printGenerationRef.current) {
+        printingRef.current = false;
+        setIsPrinting(false);
+      }
+    }
   };
 
+  const paperStyle = {
+    "--print-paper-width": `${printPaper.widthMm}mm`,
+    "--print-paper-height": `${printPaper.heightMm}mm`,
+  } as CSSProperties;
+
   return (
-    <div
-      className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 print:bg-white print:static"
-      role="dialog"
-      aria-modal="true"
-      aria-label="印刷プレビュー"
-      onClick={handleBackdropClick}
-    >
+    <>
+      <style>{getPageSizeRule(printPaper.id)}</style>
       <div
-        ref={dialogRef}
-        className="bg-white rounded-lg p-6 max-w-2xl w-full max-h-[90vh] overflow-auto print:shadow-none print:p-0 print:max-w-none print:w-auto print:max-h-none print:overflow-visible print:rounded-none"
+        className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 print:bg-white print:static"
+        role="dialog"
+        aria-modal="true"
+        aria-label="印刷プレビュー"
+        aria-busy={fontLoadStatus === "loading" || isPrinting}
+        onClick={handleBackdropClick}
       >
-        <div className="flex justify-between items-center mb-4 print:hidden">
-          <h2 className="text-lg font-bold">印刷プレビュー</h2>
-          <div className="flex gap-2">
-            <button
-              type="button"
-              onClick={handlePrint}
-              className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
-            >
-              印刷・PDF保存
-            </button>
-            <button
-              ref={closeButtonRef}
-              type="button"
-              onClick={onClose}
-              className="px-4 py-2 bg-gray-200 rounded-lg hover:bg-gray-300"
-              aria-label="印刷プレビューを閉じる"
-            >
-              閉じる
-            </button>
+        <div
+          ref={dialogRef}
+          className="bg-white rounded-lg p-6 max-w-2xl w-full max-h-[90vh] overflow-auto print:shadow-none print:p-0 print:max-w-none print:w-auto print:max-h-none print:overflow-visible print:rounded-none"
+        >
+          <div className="flex justify-between items-center mb-4 print:hidden">
+            <h2 className="text-lg font-bold">印刷プレビュー</h2>
+            <div className="flex gap-2">
+              <button
+                type="button"
+                onClick={handlePrint}
+                disabled={fontLoadStatus === "loading" || isPrinting}
+                className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-wait"
+              >
+                {fontLoadStatus === "loading" || isPrinting
+                  ? "印刷データを準備中…"
+                  : "印刷・PDF保存"}
+              </button>
+              <button
+                ref={closeButtonRef}
+                type="button"
+                onClick={requestClose}
+                disabled={isPrinting}
+                className="px-4 py-2 bg-gray-200 rounded-lg hover:bg-gray-300 disabled:text-gray-400 disabled:cursor-wait"
+                aria-label="印刷プレビューを閉じる"
+              >
+                閉じる
+              </button>
+            </div>
+          </div>
+
+          <div className="mb-4 space-y-2 text-sm print:hidden">
+            <p className="text-gray-700">
+              印刷画面で用紙を「{printPaper.label}」、倍率を「100%」、余白を「なし」に設定してください。
+            </p>
+            {fontLoadStatus === "loading" && (
+              <p role="status" className="text-blue-700">
+                日本語Webフォントを読み込んでいます。
+              </p>
+            )}
+            {fontLoadStatus === "fallback" && (
+              <p role="alert" className="text-amber-700">
+                Webフォントを読み込めなかったため、端末の代替フォントで描画しました。印刷前に書体を確認してください。
+              </p>
+            )}
+            {resolvedPaper.usedFallback && (
+              <p role="alert" className="text-amber-700">
+                用紙サイズが不正なため、A4へ切り替えました。
+              </p>
+            )}
+          </div>
+
+          <div
+            className="print-sheet flex justify-center"
+            style={paperStyle}
+            data-paper-size={printPaper.id}
+          >
+            <canvas
+              ref={canvasRef}
+              className="print-canvas block max-w-full h-auto"
+              data-testid="print-canvas"
+            />
           </div>
         </div>
-        <div className="flex justify-center">
-          <canvas ref={canvasRef} data-testid="print-canvas" />
-        </div>
       </div>
-    </div>
+    </>
   );
 }

@@ -42,4 +42,4 @@ golangci-lint run    # lint
 - テスト: 正常系 + 異常系を必ず書く
 - 本番用テンプレートの正本: `frontend/src/data/templates.ts`
 - 本番画面へGo API依存を再導入する場合は、コスト・プライバシー・運用負荷をADRで再評価する
-- 印刷: A4/A5/名刺の縦横比に対応。実寸指定とWebフォント読込保証はIssue #37で追跡する
+- 印刷: A4/A5/名刺を300 DPIで描画し、mm単位で出力する。変更時は`docs/PRINTING.md`の実PDF検証を再実行する

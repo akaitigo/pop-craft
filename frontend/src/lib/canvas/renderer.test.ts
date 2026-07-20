@@ -45,6 +45,11 @@ describe("scale", () => {
     expect(scale(36, 210)).toBe(18);
   });
 
+  it("scales user-selected font sizes for high-resolution output", () => {
+    expect(scale(28, 2480)).toBe(165);
+    expect(scale(36, 2480)).toBe(213);
+  });
+
   it("clamps to MIN_FONT_SIZE for very small canvases", () => {
     // 24 * (55/420) ≈ 3.1, below the floor
     expect(scale(24, 55)).toBe(MIN_FONT_SIZE);

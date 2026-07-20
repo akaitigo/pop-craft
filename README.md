@@ -19,10 +19,10 @@ cd frontend && pnpm install && pnpm dev
 - **リアルタイムプレビュー** — Canvas APIで入力と同時に描画
 - **フォント4種** — ゴシック / 明朝 / 手書き風 / 筆文字
 - **カラーパレット** — プリセット12色 + カスタムカラー
-- **印刷・PDF保存** — A4 / A5 / 名刺の縦横比をプレビューし、ブラウザの印刷画面から出力
+- **印刷・PDF保存** — A4 / A5 / 名刺を300 DPIで描画し、mm単位の用紙サイズで出力
 - **プライバシー** — 入力した商品情報を外部APIへ送信しない
 
-現在は用紙の縦横比をプレビューへ反映します。用紙の実寸・倍率は印刷画面で指定してください。実寸指定とWebフォント読込保証は[#37](https://github.com/akaitigo/pop-craft/issues/37)で対応します。
+印刷画面では、選択した用紙・倍率100%・余白なしを指定してください。プリンタ固有の非印字領域やブラウザ差異を含む保証範囲は[印刷ガイド](docs/PRINTING.md)を参照してください。
 
 ## スクリーンショット
 
@@ -93,12 +93,13 @@ pop-craft/
 
 ## テスト
 
-- **Frontend**: 67テスト（Vitest + Testing Library）
+- **Frontend**: 87テスト（Vitest + Testing Library）
 - **Backend**: 全パッケージカバレッジ（Go test -race）
 
 ## ドキュメント
 
 - [PRD](docs/PRD.md) — プロダクト要件定義
+- [印刷ガイド](docs/PRINTING.md) — 対応用紙・設定・検証済みブラウザ
 - [ADR-001](docs/adr/001-template-storage-strategy.md) — テンプレート保存戦略
 - [ADR-002](docs/adr/002-canvas-api-for-preview.md) — Canvas API採用理由
 - [ADR-003](docs/adr/ADR-003-static-first-deployment.md) — 固定費0円のブラウザ完結構成

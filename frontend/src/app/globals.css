@@ -1,3 +1,36 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+.print-canvas {
+  width: min(100%, 600px);
+  height: auto;
+}
+
+@media print {
+  html,
+  body {
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+
+  .print-sheet {
+    display: block !important;
+    width: var(--print-paper-width) !important;
+    height: var(--print-paper-height) !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    overflow: hidden !important;
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+
+  .print-canvas {
+    display: block !important;
+    width: var(--print-paper-width) !important;
+    height: var(--print-paper-height) !important;
+    max-width: none !important;
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+}
