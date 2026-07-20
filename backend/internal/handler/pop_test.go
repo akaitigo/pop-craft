@@ -2,7 +2,6 @@ package handler_test
 
 import (
 	"bytes"
-	"encoding/json"
 	"net/http"
 	"net/http/httptest"
 	"regexp"
@@ -22,7 +21,7 @@ func TestPreviewPOP_Valid(t *testing.T) {
 		"color_scheme": "red-gold",
 		"paper_size":   "a4",
 	}
-	b, _ := json.Marshal(body)
+	b := mustMarshalJSON(t, body)
 	req := httptest.NewRequest(http.MethodPost, "/api/v1/pop/preview", bytes.NewReader(b))
 	req.Header.Set("Content-Type", "application/json")
 	w := httptest.NewRecorder()
@@ -30,7 +29,7 @@ func TestPreviewPOP_Valid(t *testing.T) {
 	handler.PreviewPOP(w, req)
 
 	resp := w.Result()
-	defer resp.Body.Close()
+	closeResponseBody(t, resp.Body)
 
 	if resp.StatusCode != http.StatusOK {
 		t.Errorf("expected 200, got %d", resp.StatusCode)
@@ -45,7 +44,7 @@ func TestPreviewPOP_InvalidBody(t *testing.T) {
 	handler.PreviewPOP(w, req)
 
 	resp := w.Result()
-	defer resp.Body.Close()
+	closeResponseBody(t, resp.Body)
 
 	if resp.StatusCode != http.StatusBadRequest {
 		t.Errorf("expected 400, got %d", resp.StatusCode)
@@ -59,7 +58,7 @@ func TestPreviewPOP_MissingProductName(t *testing.T) {
 		"template_id":  "super-recommend",
 		"paper_size":   "a4",
 	}
-	b, _ := json.Marshal(body)
+	b := mustMarshalJSON(t, body)
 	req := httptest.NewRequest(http.MethodPost, "/api/v1/pop/preview", bytes.NewReader(b))
 	req.Header.Set("Content-Type", "application/json")
 	w := httptest.NewRecorder()
@@ -67,7 +66,7 @@ func TestPreviewPOP_MissingProductName(t *testing.T) {
 	handler.PreviewPOP(w, req)
 
 	resp := w.Result()
-	defer resp.Body.Close()
+	closeResponseBody(t, resp.Body)
 
 	if resp.StatusCode != http.StatusBadRequest {
 		t.Errorf("expected 400, got %d", resp.StatusCode)
@@ -85,7 +84,7 @@ func TestGeneratePDF_Valid(t *testing.T) {
 		"color_scheme": "red-gold",
 		"paper_size":   "a4",
 	}
-	b, _ := json.Marshal(body)
+	b := mustMarshalJSON(t, body)
 	req := httptest.NewRequest(http.MethodPost, "/api/v1/pop/pdf", bytes.NewReader(b))
 	req.Header.Set("Content-Type", "application/json")
 	w := httptest.NewRecorder()
@@ -93,7 +92,7 @@ func TestGeneratePDF_Valid(t *testing.T) {
 	handler.GeneratePDF(w, req)
 
 	resp := w.Result()
-	defer resp.Body.Close()
+	closeResponseBody(t, resp.Body)
 
 	if resp.StatusCode != http.StatusOK {
 		t.Errorf("expected 200, got %d", resp.StatusCode)
@@ -117,7 +116,7 @@ func TestGeneratePDF_DynamicFilename(t *testing.T) {
 		"template_id":  "super-recommend",
 		"paper_size":   "a4",
 	}
-	b, _ := json.Marshal(body)
+	b := mustMarshalJSON(t, body)
 	req := httptest.NewRequest(http.MethodPost, "/api/v1/pop/pdf", bytes.NewReader(b))
 	req.Header.Set("Content-Type", "application/json")
 	w := httptest.NewRecorder()
@@ -125,7 +124,7 @@ func TestGeneratePDF_DynamicFilename(t *testing.T) {
 	handler.GeneratePDF(w, req)
 
 	resp := w.Result()
-	defer resp.Body.Close()
+	closeResponseBody(t, resp.Body)
 
 	cd := resp.Header.Get("Content-Disposition")
 	// Expect a dynamic name of the form pop-<templateID>-<unix>.pdf, no longer
@@ -147,7 +146,7 @@ func TestGeneratePDF_InvalidBody(t *testing.T) {
 	handler.GeneratePDF(w, req)
 
 	resp := w.Result()
-	defer resp.Body.Close()
+	closeResponseBody(t, resp.Body)
 
 	if resp.StatusCode != http.StatusBadRequest {
 		t.Errorf("expected 400, got %d", resp.StatusCode)

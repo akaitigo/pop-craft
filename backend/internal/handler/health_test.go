@@ -16,7 +16,7 @@ func TestHealth(t *testing.T) {
 	handler.Health(w, req)
 
 	resp := w.Result()
-	defer resp.Body.Close()
+	closeResponseBody(t, resp.Body)
 
 	if resp.StatusCode != http.StatusOK {
 		t.Errorf("expected status 200, got %d", resp.StatusCode)

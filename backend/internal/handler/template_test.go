@@ -20,7 +20,7 @@ func TestListTemplates(t *testing.T) {
 	handler.ListTemplates(w, req)
 
 	resp := w.Result()
-	defer resp.Body.Close()
+	closeResponseBody(t, resp.Body)
 
 	if resp.StatusCode != http.StatusOK {
 		t.Fatalf("expected status 200, got %d", resp.StatusCode)
@@ -64,7 +64,7 @@ func TestGetTemplatesByCategory(t *testing.T) {
 			r.ServeHTTP(w, req)
 
 			resp := w.Result()
-			defer resp.Body.Close()
+			closeResponseBody(t, resp.Body)
 
 			if resp.StatusCode != tt.wantCode {
 				t.Errorf("expected status %d, got %d", tt.wantCode, resp.StatusCode)
@@ -97,7 +97,7 @@ func TestGetTemplatesByCategory_InvalidRejectedByAllowlist(t *testing.T) {
 			r.ServeHTTP(w, req)
 
 			resp := w.Result()
-			defer resp.Body.Close()
+			closeResponseBody(t, resp.Body)
 
 			if resp.StatusCode != http.StatusNotFound {
 				t.Fatalf("expected status 404, got %d", resp.StatusCode)
