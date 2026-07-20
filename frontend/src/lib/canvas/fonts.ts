@@ -59,10 +59,22 @@ export function getGoogleFontsUrl(): string {
   return `https://fonts.googleapis.com/css2?${families}&display=swap`;
 }
 
+export function buildCanvasFontLoadText(
+  ...parts: Array<string | number | null | undefined>
+): string {
+  const text = parts
+    .filter((part): part is string | number => part !== null && part !== undefined)
+    .map(String)
+    .join(" ")
+    .trim();
+  return text || FONT_LOAD_SAMPLE;
+}
+
 export async function loadCanvasFont(
   fontFamily: FontFamily,
   options: {
     fontLoader?: FontLoader;
+    text?: string;
     timeoutMs?: number;
   } = {}
 ): Promise<boolean> {
@@ -77,13 +89,14 @@ export async function loadCanvasFont(
   const font = FONT_DEFINITIONS[fontFamily];
   const primaryFamily = font.cssFontFamily.split(",")[0];
   const fontSpec = `${font.weight} 32px ${primaryFamily}`;
+  const text = options.text?.trim() || FONT_LOAD_SAMPLE;
   const timeoutMs = options.timeoutMs ?? FONT_LOAD_TIMEOUT_MS;
   let timeoutId: ReturnType<typeof setTimeout> | undefined;
 
   try {
     const loaded = await Promise.race([
       fontLoader
-        .load(fontSpec, FONT_LOAD_SAMPLE)
+        .load(fontSpec, text)
         .then((fontFaces) => fontFaces.length > 0),
       new Promise<boolean>((resolve) => {
         timeoutId = setTimeout(() => resolve(false), timeoutMs);

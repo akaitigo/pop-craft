@@ -117,6 +117,60 @@ describe("PrintPreview", () => {
     expect(mockedLoadCanvasFont).toHaveBeenCalledTimes(2);
   });
 
+  it("loads the glyphs from every rendered field", async () => {
+    render(<PrintPreview {...defaultProps} />);
+
+    await waitFor(() => {
+      expect(mockedLoadCanvasFont).toHaveBeenCalledWith("gothic", {
+        text: expect.stringContaining("青森県産りんご"),
+      });
+    });
+    const text = mockedLoadCanvasFont.mock.calls[0]?.[1]?.text;
+    expect(text).toContain("本日のおすすめ");
+    expect(text).toContain("今が旬");
+    expect(text).toContain("甘みと酸味のバランス");
+    expect(text).toContain("¥198");
+    expect(text).toContain("税込");
+  });
+
+  it("cancels printing and every close path while preparation is pending", async () => {
+    const onClose = vi.fn();
+    let finishPrintFontLoad: ((loaded: boolean) => void) | undefined;
+    mockedLoadCanvasFont
+      .mockResolvedValueOnce(true)
+      .mockReturnValueOnce(
+        new Promise<boolean>((resolve) => {
+          finishPrintFontLoad = resolve;
+        })
+      );
+
+    const { rerender } = render(
+      <PrintPreview {...defaultProps} onClose={onClose} />
+    );
+    const printButton = await screen.findByRole("button", {
+      name: "印刷・PDF保存",
+    });
+    fireEvent.click(printButton);
+
+    const closeButton = screen.getByRole("button", {
+      name: "印刷プレビューを閉じる",
+    });
+    expect(closeButton).toBeDisabled();
+    fireEvent.click(closeButton);
+    fireEvent.keyDown(document, { key: "Escape" });
+    fireEvent.click(screen.getByRole("dialog", { name: "印刷プレビュー" }));
+    expect(onClose).not.toHaveBeenCalled();
+
+    rerender(
+      <PrintPreview {...defaultProps} open={false} onClose={onClose} />
+    );
+    await act(async () => {
+      finishPrintFontLoad?.(true);
+    });
+
+    expect(window.print).not.toHaveBeenCalled();
+  });
+
   it("warns and continues with a fallback font when loading fails", async () => {
     mockedLoadCanvasFont.mockResolvedValue(false);
     render(<PrintPreview {...defaultProps} />);

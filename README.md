@@ -93,7 +93,7 @@ pop-craft/
 
 ## テスト
 
-- **Frontend**: 84テスト（Vitest + Testing Library）
+- **Frontend**: 87テスト（Vitest + Testing Library）
 - **Backend**: 全パッケージカバレッジ（Go test -race）
 
 ## ドキュメント

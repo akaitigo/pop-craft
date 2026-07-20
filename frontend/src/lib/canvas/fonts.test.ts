@@ -3,6 +3,7 @@ import {
   FONT_DEFINITIONS,
   ALL_FONTS,
   FONT_LOAD_SAMPLE,
+  buildCanvasFontLoadText,
   getFontCss,
   getGoogleFontsUrl,
   loadCanvasFont,
@@ -83,6 +84,27 @@ describe("loadCanvasFont", () => {
     await expect(
       loadCanvasFont("mincho", { fontLoader: { load } })
     ).resolves.toBe(false);
+  });
+
+  it("loads every glyph from the actual text instead of only the default sample", async () => {
+    const load = vi.fn().mockResolvedValue([{} as FontFace]);
+    const text = buildCanvasFontLoadText(
+      "本日のおすすめ",
+      "青森県産りんご",
+      "甘みと酸味",
+      198,
+      "税込"
+    );
+
+    await loadCanvasFont("gothic", {
+      fontLoader: { load },
+      text,
+    });
+
+    expect(load).toHaveBeenCalledWith(
+      "700 32px 'Noto Sans JP'",
+      "本日のおすすめ 青森県産りんご 甘みと酸味 198 税込"
+    );
   });
 
   it("returns false when no matching font face is loaded", async () => {

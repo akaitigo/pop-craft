@@ -4,7 +4,10 @@ import { useRef, useEffect, useCallback, useState } from "react";
 import type { CSSProperties } from "react";
 import type { Template, FontFamily, PaperSize } from "@/types/pop";
 import { renderPOP } from "@/lib/canvas/renderer";
-import { loadCanvasFont } from "@/lib/canvas/fonts";
+import {
+  buildCanvasFontLoadText,
+  loadCanvasFont,
+} from "@/lib/canvas/fonts";
 import {
   getPageSizeRule,
   getPrintCanvasDimensions,
@@ -51,11 +54,31 @@ export function PrintPreview({
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const dialogRef = useRef<HTMLDivElement>(null);
   const closeButtonRef = useRef<HTMLButtonElement>(null);
+  const openRef = useRef(open);
+  const printGenerationRef = useRef(0);
+  const printingRef = useRef(false);
   const [fontLoadStatus, setFontLoadStatus] =
     useState<FontLoadStatus>("loading");
   const [isPrinting, setIsPrinting] = useState(false);
   const resolvedPaper = resolvePrintPaper(paperSize);
   const printPaper = resolvedPaper.paper;
+  openRef.current = open;
+  const fontLoadText = buildCanvasFontLoadText(
+    template?.name,
+    productName || "商品名",
+    catchphrase,
+    description,
+    `¥${price.toLocaleString()}`,
+    priceType === "tax_excluded" ? "税抜" : "税込"
+  );
+
+  useEffect(() => {
+    if (!open) {
+      printGenerationRef.current += 1;
+      printingRef.current = false;
+      setIsPrinting(false);
+    }
+  }, [open]);
 
   const drawPrintCanvas = useCallback(() => {
     const canvas = canvasRef.current;
@@ -99,7 +122,7 @@ export function PrintPreview({
     let cancelled = false;
     setFontLoadStatus("loading");
 
-    void loadCanvasFont(fontFamily).then((loaded) => {
+    void loadCanvasFont(fontFamily, { text: fontLoadText }).then((loaded) => {
       if (cancelled) return;
       drawPrintCanvas();
       setFontLoadStatus(loaded ? "ready" : "fallback");
@@ -108,7 +131,11 @@ export function PrintPreview({
     return () => {
       cancelled = true;
     };
-  }, [drawPrintCanvas, fontFamily, open]);
+  }, [drawPrintCanvas, fontFamily, fontLoadText, open]);
+
+  const requestClose = useCallback(() => {
+    if (!printingRef.current) onClose();
+  }, [onClose]);
 
   // Focus trap and Escape key handler
   useEffect(() => {
@@ -119,7 +146,7 @@ export function PrintPreview({
 
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === "Escape") {
-        onClose();
+        requestClose();
         return;
       }
 
@@ -145,28 +172,41 @@ export function PrintPreview({
 
     document.addEventListener("keydown", handleKeyDown);
     return () => document.removeEventListener("keydown", handleKeyDown);
-  }, [open, onClose]);
+  }, [open, requestClose]);
 
   const handleBackdropClick = useCallback(
     (e: React.MouseEvent) => {
       if (e.target === e.currentTarget) {
-        onClose();
+        requestClose();
       }
     },
-    [onClose]
+    [requestClose]
   );
 
   if (!open) return null;
 
   const handlePrint = async () => {
+    if (printingRef.current) return;
+    printingRef.current = true;
+    const generation = ++printGenerationRef.current;
     setIsPrinting(true);
     try {
-      const loaded = await loadCanvasFont(fontFamily);
+      const loaded = await loadCanvasFont(fontFamily, { text: fontLoadText });
+      if (
+        generation !== printGenerationRef.current ||
+        !openRef.current ||
+        !canvasRef.current
+      ) {
+        return;
+      }
       drawPrintCanvas();
       setFontLoadStatus(loaded ? "ready" : "fallback");
       window.print();
     } finally {
-      setIsPrinting(false);
+      if (generation === printGenerationRef.current) {
+        printingRef.current = false;
+        setIsPrinting(false);
+      }
     }
   };
 
@@ -206,8 +246,9 @@ export function PrintPreview({
               <button
                 ref={closeButtonRef}
                 type="button"
-                onClick={onClose}
-                className="px-4 py-2 bg-gray-200 rounded-lg hover:bg-gray-300"
+                onClick={requestClose}
+                disabled={isPrinting}
+                className="px-4 py-2 bg-gray-200 rounded-lg hover:bg-gray-300 disabled:text-gray-400 disabled:cursor-wait"
                 aria-label="印刷プレビューを閉じる"
               >
                 閉じる

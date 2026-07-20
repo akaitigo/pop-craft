@@ -3,7 +3,10 @@
 import { useRef, useEffect } from "react";
 import type { PaperSize, FontFamily, Template } from "@/types/pop";
 import { renderPOP, getCanvasDimensions } from "@/lib/canvas/renderer";
-import { loadCanvasFont } from "@/lib/canvas/fonts";
+import {
+  buildCanvasFontLoadText,
+  loadCanvasFont,
+} from "@/lib/canvas/fonts";
 
 interface PopCanvasProps {
   productName: string;
@@ -68,7 +71,15 @@ export function PopCanvas({
     // Keep the editor responsive with a fallback font, then redraw once the
     // selected Web Font is available so Canvas captures the intended glyphs.
     draw();
-    void loadCanvasFont(fontFamily).then((loaded) => {
+    const fontLoadText = buildCanvasFontLoadText(
+      template?.name ?? "テンプレート",
+      productName || "商品名",
+      catchphrase,
+      description,
+      `¥${price.toLocaleString()}`,
+      priceType === "tax_excluded" ? "税抜" : "税込"
+    );
+    void loadCanvasFont(fontFamily, { text: fontLoadText }).then((loaded) => {
       if (!cancelled && loaded) draw();
     });
 
